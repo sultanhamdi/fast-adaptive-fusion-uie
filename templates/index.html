@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lightweight Adaptive Fusion — Live Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0e14;
+      --surface: #141722;
+      --surface2: #1b1f2e;
+      --border: #262a3a;
+      --text: #e2e4ea;
+      --text2: #8b90a0;
+      --accent: #4de8b4;
+      --accent2: #38bdf8;
+      --red: #f87171;
+      --gradient: linear-gradient(135deg, #4de8b4, #38bdf8);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      padding: 2.5rem 1rem 1.5rem;
+    }
+    .header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header p {
+      color: var(--text2);
+      font-size: .85rem;
+      margin-top: .4rem;
+    }
+
+    /* ── Drop Zone ── */
+    .drop-zone {
+      max-width: 620px;
+      margin: 0 auto 2rem;
+      padding: 2.5rem 2rem;
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .25s, background .25s;
+      background: var(--surface);
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(77,232,180,.04);
+    }
+    .drop-zone svg { width: 48px; height: 48px; opacity: .45; margin-bottom: .8rem; }
+    .drop-zone .label { font-size: .95rem; color: var(--text2); }
+    .drop-zone .label span { color: var(--accent); font-weight: 600; text-decoration: underline; cursor: pointer; }
+    .drop-zone input { display: none; }
+
+    /* ── Loader ── */
+    .loader-wrap {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      gap: .8rem;
+      margin-bottom: 1.5rem;
+    }
+    .loader-wrap.active { display: flex; }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result Section ── */
+    #result { display: none; max-width: 960px; margin: 0 auto; padding: 0 1rem 3rem; }
+    #result.visible { display: block; }
+
+    /* ── Speed Badge ── */
+    .speed-badge {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .speed-badge .pill {
+      display: inline-flex;
+      gap: .6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: .45rem 1.2rem;
+      font-size: .82rem;
+      color: var(--text2);
+    }
+    .speed-badge .val { color: var(--accent); font-weight: 600; }
+
+    /* ── Comparison Slider ── */
+    .compare-container {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      user-select: none;
+      touch-action: none;
+      cursor: ew-resize;
+    }
+    .compare-container img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .compare-container .layer-enhanced {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .compare-container .layer-enhanced img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .compare-container .divider {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      z-index: 10;
+      pointer-events: none;
+    }
+    .compare-container .divider::after {
+      content: '⟺';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--accent);
+      color: var(--bg);
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 6px 8px;
+      border-radius: 999px;
+    }
+    .compare-container .tag {
+      position: absolute;
+      top: 12px;
+      background: rgba(0,0,0,.65);
+      backdrop-filter: blur(6px);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .03em;
+      z-index: 5;
+    }
+    .tag-original { left: 12px; color: var(--red); }
+    .tag-enhanced { right: 12px; color: var(--accent); }
+
+    /* ── Metrics Grid ── */
+    .metrics-title {
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 1.8rem 0 1rem;
+      color: var(--text2);
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      transition: border-color .2s;
+    }
+    .metric-card:hover { border-color: var(--accent); }
+    .metric-card .name { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text2); margin-bottom: .55rem; }
+    .metric-card .values { display: flex; justify-content: center; gap: 1.2rem; }
+    .metric-card .col { display: flex; flex-direction: column; gap: .15rem; }
+    .metric-card .col .num { font-size: 1.15rem; font-weight: 700; }
+    .metric-card .col .sub { font-size: .62rem; color: var(--text2); text-transform: uppercase; }
+    .orig .num { color: var(--text2); }
+    .enh .num { color: var(--accent); }
+    .metric-card .arrow { font-size: .75rem; color: var(--accent); margin-top: .45rem; font-weight: 600; }
+    .arrow.down { color: var(--accent); }
+    .arrow.up { color: var(--accent); }
+    .arrow.worse { color: var(--red); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: .72rem;
+      color: var(--text2);
+      opacity: .5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <h1>Lightweight Adaptive Fusion</h1>
+    <p>Real-time Underwater Image Enhancement — Live Demo</p>
+  </header>
+
+  <!-- Upload -->
+  <div class="drop-zone" id="dropZone">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+    </svg>
+    <p class="label">Drag &amp; drop an underwater image, or <span>browse</span></p>
+    <input type="file" id="fileInput" accept="image/*" />
+  </div>
+
+  <!-- Loader -->
+  <div class="loader-wrap" id="loader">
+    <div class="spinner"></div>
+    <span style="font-size:.85rem;color:var(--text2)">Enhancing…</span>
+  </div>
+
+  <!-- Results -->
+  <section id="result">
+    <div class="speed-badge">
+      <div class="pill">
+        <span>Processing <span class="val" id="statMs">—</span> ms</span>
+        <span>|</span>
+        <span><span class="val" id="statFps">—</span> FPS</span>
+        <span>|</span>
+        <span><span class="val" id="statRes">—</span></span>
+      </div>
+    </div>
+
+    <!-- Comparison Slider -->
+    <div class="compare-container" id="compare">
+      <img id="imgOrig" src="" alt="Original" />
+      <div class="layer-enhanced" id="layerEnh">
+        <img id="imgEnh" src="" alt="Enhanced" />
+      </div>
+      <div class="divider" id="divider"></div>
+      <div class="tag tag-original">ORIGINAL</div>
+      <div class="tag tag-enhanced">ENHANCED</div>
+    </div>
+
+    <!-- Metrics -->
+    <p class="metrics-title">Evaluation Metrics</p>
+    <div class="metrics-grid" id="metricsGrid"></div>
+  </section>
+
+  <footer class="footer">Lightweight Adaptive Fusion · Bounded Gray World + Luminance CLAHE + Single-level Adaptive Fusion</footer>
+
+  <script>
+    const dropZone  = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const loader    = document.getElementById('loader');
+    const result    = document.getElementById('result');
+
+    /* ── Drag & Drop ── */
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files.length) processFile(fileInput.files[0]); });
+
+    /* ── Upload & Enhance ── */
+    async function processFile(file) {
+      loader.classList.add('active');
+      result.classList.remove('visible');
+
+      const fd = new FormData();
+      fd.append('image', file);
+
+      try {
+        const res  = await fetch('/enhance', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        showResult(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        loader.classList.remove('active');
+      }
+    }
+
+    /* ── Display Results ── */
+    function showResult(data) {
+      document.getElementById('imgOrig').src = data.original;
+      document.getElementById('imgEnh').src  = data.enhanced;
+      document.getElementById('statMs').textContent  = data.elapsed_ms;
+      document.getElementById('statFps').textContent = data.fps;
+      document.getElementById('statRes').textContent = data.width + '×' + data.height;
+
+      /* Metrics */
+      const m = data.metrics;
+      const grid = document.getElementById('metricsGrid');
+      grid.innerHTML = '';
+
+      const items = [
+        { name: 'UIQM', orig: m.uiqm_orig, enh: m.uiqm_enh, higher: true },
+        { name: 'UCIQE', orig: m.uciqe_orig, enh: m.uciqe_enh, higher: true },
+        { name: 'NIQE~', orig: m.niqe_orig, enh: m.niqe_enh, higher: false },
+      ];
+
+      items.forEach(it => {
+        const diff = it.enh - it.orig;
+        const better = it.higher ? diff > 0 : diff < 0;
+        const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+        const cls = better ? (diff > 0 ? 'up' : 'down') : 'worse';
+
+        grid.innerHTML += `
+          <div class="metric-card">
+            <div class="name">${it.name} ${it.higher ? '(↑ better)' : '(↓ better)'}</div>
+            <div class="values">
+              <div class="col orig"><span class="num">${it.orig.toFixed(3)}</span><span class="sub">original</span></div>
+              <div class="col enh"><span class="num">${it.enh.toFixed(3)}</span><span class="sub">enhanced</span></div>
+            </div>
+            <div class="arrow ${cls}">${arrow} ${Math.abs(diff).toFixed(3)}</div>
+          </div>`;
+      });
+
+      /* Comparison slider → 50% */
+      setSlider(0.5);
+      result.classList.add('visible');
+    }
+
+    /* ── Comparison Slider Logic ── */
+    const compare = document.getElementById('compare');
+    const layerEnh = document.getElementById('layerEnh');
+    const divider  = document.getElementById('divider');
+
+    function setSlider(pct) {
+      const p = Math.max(0, Math.min(1, pct)) * 100;
+      layerEnh.style.clipPath = `inset(0 0 0 ${p}%)`;
+      divider.style.left = p + '%';
+    }
+
+    let dragging = false;
+    compare.addEventListener('pointerdown', e => { dragging = true; compare.setPointerCapture(e.pointerId); moveSlider(e); });
+    compare.addEventListener('pointermove', e => { if (dragging) moveSlider(e); });
+    compare.addEventListener('pointerup',   e => { dragging = false; });
+
+    function moveSlider(e) {
+      const rect = compare.getBoundingClientRect();
+      setSlider((e.clientX - rect.left) / rect.width);
+    }
+  </script>
+</body>
+</html>
