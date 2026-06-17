@@ -1,5 +1,5 @@
 """
-Live Demo — Lightweight Adaptive Fusion UIE
+Live Demo - Lightweight Adaptive Fusion UIE
 Flask web app for real-time underwater image enhancement demo.
 """
 
@@ -53,12 +53,12 @@ def enhance():
     elapsed_ms = (time.perf_counter() - t0) * 1000
     fps = 1000.0 / elapsed_ms
 
-    # Metrics — original
+    # Metrics - original
     uiqm_orig = compute_uiqm(img)["uiqm"]
     uciqe_orig = compute_uciqe(img)["uciqe"]
     niqe_orig = compute_niqe_approx(img)["niqe_approx"]
 
-    # Metrics — enhanced
+    # Metrics - enhanced
     uiqm_enh = compute_uiqm(result)["uiqm"]
     uciqe_enh = compute_uciqe(result)["uciqe"]
     niqe_enh = compute_niqe_approx(result)["niqe_approx"]
@@ -82,6 +82,6 @@ def enhance():
 
 
 if __name__ == "__main__":
-    print("\n  Lightweight Adaptive Fusion — Live Demo")
+    print("\n  Lightweight Adaptive Fusion - Live Demo")
     print("  http://127.0.0.1:5000\n")
     app.run(debug=False, port=5000)

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lightweight Adaptive Fusion — Live Demo</title>
+  <title>Lightweight Adaptive Fusion - Live Demo</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -218,7 +218,7 @@
   <!-- Header -->
   <header class="header">
     <h1>Lightweight Adaptive Fusion</h1>
-    <p>Real-time Underwater Image Enhancement — Live Demo</p>
+    <p>Real-time Underwater Image Enhancement - Live Demo</p>
   </header>
 
   <!-- Upload -->
@@ -241,11 +241,11 @@
   <section id="result">
     <div class="speed-badge">
       <div class="pill">
-        <span>Processing <span class="val" id="statMs">—</span> ms</span>
+        <span>Processing <span class="val" id="statMs">-</span> ms</span>
         <span>|</span>
-        <span><span class="val" id="statFps">—</span> FPS</span>
+        <span><span class="val" id="statFps">-</span> FPS</span>
         <span>|</span>
-        <span><span class="val" id="statRes">—</span></span>
+        <span><span class="val" id="statRes">-</span></span>
       </div>
     </div>
 
@@ -326,7 +326,7 @@
       items.forEach(it => {
         const diff = it.enh - it.orig;
         const better = it.higher ? diff > 0 : diff < 0;
-        const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+        const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '-';
         const cls = better ? (diff > 0 ? 'up' : 'down') : 'worse';
 
         grid.innerHTML += `

@@ -7,7 +7,7 @@ Implementasi algoritma dari paper:
 Pipeline terdiri dari 3 fase berurutan:
   1. Color Enhancement    CLAHE per-channel (B, G, R)
   2. Dehazing & Contrast  CLAHE pada saluran Luminance (YCbCr)
-  3. White Balancing      Histogram Stretching (persentil 2–98)
+  3. White Balancing      Histogram Stretching (persentil 2-98)
 
 Dependencies: opencv-python, numpy
 """
@@ -36,7 +36,7 @@ class FastUnderwaterEnhancer:
         self._low_pct = low_pct
         self._high_pct = high_pct
 
-    # Fase 1 – Color Enhancement
+    # Fase 1 - Color Enhancement
     def _color_enhancement(self, bgr: np.ndarray) -> np.ndarray:
         """
         Terapkan CLAHE secara independen pada setiap saluran warna BGR.
@@ -50,7 +50,7 @@ class FastUnderwaterEnhancer:
 
         return cv2.merge((b_eq, g_eq, r_eq))
 
-    # Fase 2 – Dehazing & Contrast
+    # Fase 2 - Dehazing & Contrast
     def _dehazing_contrast(self, bgr: np.ndarray) -> np.ndarray:
         """
         Perkuat kontras luminance di ruang warna YCbCr.
@@ -64,7 +64,7 @@ class FastUnderwaterEnhancer:
         ycbcr_eq = cv2.merge((y_eq, cr, cb))
         return cv2.cvtColor(ycbcr_eq, cv2.COLOR_YCrCb2BGR)
 
-    # Fase 3 – White Balancing
+    # Fase 3 - White Balancing
     def _white_balancing(self, bgr: np.ndarray) -> np.ndarray:
         """
         Histogram stretching berbasis persentil untuk white balancing.

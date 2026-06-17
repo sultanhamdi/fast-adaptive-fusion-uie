@@ -6,7 +6,7 @@ Pipeline tiga langkah:
   B. Detail Enhancement      CLAHE pada Luminance (YCbCr)
   C. Lightweight Fusion      Saliency + Brightness weight maps
 
-Seluruh operasi berbasis numpy vectorization — zero pixel-level loop.
+Seluruh operasi berbasis numpy vectorization - zero pixel-level loop.
 
 """
 
@@ -42,7 +42,7 @@ class LightweightAdaptiveFusion:
             tileGridSize=clahe_tile,
         )
 
-    # Langkah A – Fast Color Correction (Bounded Gray World)
+    # Langkah A - Fast Color Correction (Bounded Gray World)
     def _step_a_color_correction(self, image: np.ndarray) -> np.ndarray:
         """
         Koreksi warna cepat via Bounded Gray World.
@@ -63,7 +63,7 @@ class LightweightAdaptiveFusion:
         corrected = np.clip(img_f * gain, 0.0, 255.0).astype(np.uint8)
         return corrected                               # Kandidat 1
 
-    # Langkah B – Detail Enhancement via CLAHE pada Luminance
+    # Langkah B - Detail Enhancement via CLAHE pada Luminance
     def _step_b_detail_enhancement(self, cand1: np.ndarray) -> np.ndarray:
         """
         Perkuat detail tekstur dengan CLAHE pada saluran Y (YCbCr).
@@ -78,7 +78,7 @@ class LightweightAdaptiveFusion:
         cand2 = cv2.cvtColor(merged, cv2.COLOR_YCrCb2BGR)
         return cand2                                   # Kandidat 2
 
-    # Langkah C – Lightweight Single-Level Fusion
+    # Langkah C - Lightweight Single-Level Fusion
 
     def _weight_saliency(self, bgr: np.ndarray) -> np.ndarray:
         """

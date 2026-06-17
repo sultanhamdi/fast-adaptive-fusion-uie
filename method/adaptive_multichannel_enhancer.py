@@ -72,7 +72,7 @@ class AdaptiveMultichannelEnhancer:
 
         return result
 
-    # STEP 1 — Gridded Adaptive Channel Compensation (GACC)
+    # STEP 1 - Gridded Adaptive Channel Compensation (GACC)
 
     def _gacc(self, image: np.ndarray) -> np.ndarray:
         img_f = image.astype(np.float32)
@@ -103,7 +103,7 @@ class AdaptiveMultichannelEnhancer:
 
         return np.clip(output, 0, 255).astype(np.uint8)
 
-    # STEP 2a — Channel 1: Local Entropy-Constrained Gray World (LEGW)
+    # STEP 2a - Channel 1: Local Entropy-Constrained Gray World (LEGW)
 
     def _legw(self, image: np.ndarray) -> np.ndarray:
         """
@@ -166,7 +166,7 @@ class AdaptiveMultichannelEnhancer:
 
         return entropy_map
 
-    # STEP 2b — Channel 2: CLAHE
+    # STEP 2b - Channel 2: CLAHE
 
     def _apply_clahe(self, image: np.ndarray) -> np.ndarray:
         """
@@ -182,7 +182,7 @@ class AdaptiveMultichannelEnhancer:
         result = cv2.cvtColor(lab_eq, cv2.COLOR_LAB2BGR)
         return result
 
-    # STEP 3 — Weight Maps
+    # STEP 3 - Weight Maps
 
     def _compute_weights(
         self, image: np.ndarray
@@ -221,7 +221,7 @@ class AdaptiveMultichannelEnhancer:
         w_bri  = np.exp(-((gray - t) ** 2) / (2.0 * sigma ** 2))
         return w_bri.astype(np.float32)
 
-    # STEP 4 — Laplacian–Gaussian Pyramid Fusion
+    # STEP 4 - Laplacian-Gaussian Pyramid Fusion
 
     def _pyramid_fusion(
         self,
@@ -231,7 +231,7 @@ class AdaptiveMultichannelEnhancer:
         w2:  np.ndarray,
     ) -> np.ndarray:
         """
-        Fusi dua citra menggunakan piramida Laplacian–Gaussian.
+        Fusi dua citra menggunakan piramida Laplacian-Gaussian.
         """
         N = self.pyramid_levels
 
