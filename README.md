@@ -29,7 +29,9 @@ fast-adaptive-fusion-uie/
 ├── app.py                                   # Server Flask untuk Live Demo Web App
 ├── templates/
 │   └── index.html                           # Antarmuka web app (Dark mode, slider komparasi)
-├── Underwater Image/                        # Dataset UIEB-based (Biru, Gelap, Hijau)
+├── dataset/                                 # Dataset UIEB (890 pasang gambar)
+│   ├── raw/                                 # Citra bawah laut asli (degraded)
+│   └── reference/                           # Citra referensi (ground truth)
 └── README.md                                # Dokumentasi ini
 ```
 

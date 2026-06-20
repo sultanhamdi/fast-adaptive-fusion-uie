@@ -45,13 +45,15 @@ class LightweightAdaptiveFusion:
     # Langkah A - Fast Color Correction (Bounded Gray World)
     def _step_a_color_correction(self, image: np.ndarray) -> np.ndarray:
         """
-        Koreksi warna cepat via Bounded Gray World.
+        Koreksi warna cepat via Bounded Gray World dengan atenuasi brightness.
 
+        Gain dikurangi secara proporsional untuk piksel yang sudah terang
+        agar area putih/terang tidak bergeser ke merah akibat clipping.
         """
         img_f = image.astype(np.float32)               # (H, W, 3) float32
 
-        # Mean per saluran: axis=(0,1) → shape (3,) untuk B, G, R
-        ch_mean = img_f.mean(axis=(0, 1))              # [μB, μG, μR]
+        # Mean per saluran: axis=(0,1) -> shape (3,) untuk B, G, R
+        ch_mean = img_f.mean(axis=(0, 1))              # [muB, muG, muR]
         mean_gray = ch_mean.mean()                     # skalar
 
         gain = mean_gray / (ch_mean + self._eps)       # [gB, gG, gR]
@@ -59,8 +61,16 @@ class LightweightAdaptiveFusion:
         # Bounded: batasi gain merah (index 2 = R pada BGR)
         gain[2] = min(gain[2], self._max_red_gain)
 
-        # Broadcast langsung: (H, W, 3) * (3,)
-        corrected = np.clip(img_f * gain, 0.0, 255.0).astype(np.uint8)
+        # Atenuasi brightness-adaptive: kurangi gain untuk piksel terang
+        # alpha = 1.0 untuk piksel gelap (butuh koreksi penuh)
+        # alpha -> 0.0 untuk piksel mendekati 255 (sudah terang, jangan over-correct)
+        luminance = img_f.max(axis=2, keepdims=True)   # (H, W, 1)
+        alpha = 1.0 - (luminance / 255.0) ** 2         # quadratic falloff
+
+        # Gain efektif per piksel: lerp antara 1.0 (tanpa koreksi) dan gain
+        effective_gain = 1.0 + alpha * (gain - 1.0)    # (H, W, 3)
+
+        corrected = np.clip(img_f * effective_gain, 0.0, 255.0).astype(np.uint8)
         return corrected                               # Kandidat 1
 
     # Langkah B - Detail Enhancement via CLAHE pada Luminance

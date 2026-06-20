@@ -203,6 +203,29 @@
     .arrow.up { color: var(--accent); }
     .arrow.worse { color: var(--red); }
 
+    .btn-download {
+      background: var(--gradient);
+      color: var(--bg);
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-download:hover {
+      opacity: 0.9;
+    }
+    .btn-download svg {
+      width: 18px;
+      height: 18px;
+    }
+
     /* ── Footer ── */
     .footer {
       text-align: center;
@@ -263,6 +286,16 @@
     <!-- Metrics -->
     <p class="metrics-title">Evaluation Metrics</p>
     <div class="metrics-grid" id="metricsGrid"></div>
+
+    <!-- Actions -->
+    <div style="text-align: center;">
+      <button id="btnDownload" class="btn-download" style="display: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Download Enhanced Image
+      </button>
+    </div>
   </section>
 
   <footer class="footer">Lightweight Adaptive Fusion · Bounded Gray World + Luminance CLAHE + Single-level Adaptive Fusion</footer>
@@ -272,6 +305,9 @@
     const fileInput = document.getElementById('fileInput');
     const loader    = document.getElementById('loader');
     const result    = document.getElementById('result');
+    const btnDownload = document.getElementById('btnDownload');
+    let currentEnhancedData = null;
+    let currentFileName = 'enhanced_image.jpg';
 
     /* ── Drag & Drop ── */
     dropZone.addEventListener('click', () => fileInput.click());
@@ -291,6 +327,12 @@
 
       const fd = new FormData();
       fd.append('image', file);
+      
+      // Save original filename to use for download
+      const originalName = file.name;
+      const nameParts = originalName.split('.');
+      const ext = nameParts.pop();
+      currentFileName = `${nameParts.join('.')}_enhanced.${ext}`;
 
       try {
         const res  = await fetch('/enhance', { method: 'POST', body: fd });
@@ -340,10 +382,25 @@
           </div>`;
       });
 
-      /* Comparison slider → 50% */
+      /* Comparison slider -> 50% */
       setSlider(0.5);
       result.classList.add('visible');
+
+      /* Setup Download */
+      currentEnhancedData = data.enhanced;
+      btnDownload.style.display = 'inline-flex';
     }
+
+    /* ── Download Handler ── */
+    btnDownload.addEventListener('click', () => {
+      if (!currentEnhancedData) return;
+      const a = document.createElement('a');
+      a.href = currentEnhancedData;
+      a.download = currentFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
 
     /* ── Comparison Slider Logic ── */
     const compare = document.getElementById('compare');
