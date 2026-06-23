@@ -68,6 +68,36 @@
     .drop-zone .label span { color: var(--accent); font-weight: 600; text-decoration: underline; cursor: pointer; }
     .drop-zone input { display: none; }
 
+    /* ── Sample Section ── */
+    .sample-section {
+      max-width: 620px;
+      margin: 0 auto 2.5rem;
+      text-align: center;
+    }
+    .sample-title {
+      font-size: 0.85rem;
+      color: var(--text2);
+      margin-bottom: 0.8rem;
+    }
+    .sample-grid {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .sample-grid img {
+      width: 80px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .sample-grid img:hover {
+      transform: scale(1.08);
+      border-color: var(--accent);
+    }
+
     /* ── Loader ── */
     .loader-wrap {
       display: none;
@@ -255,6 +285,17 @@
     <input type="file" id="fileInput" accept="image/*" />
   </div>
 
+  <!-- Try Sample -->
+  <div class="sample-section">
+    <p class="sample-title">Atau coba gambar sampel berikut:</p>
+    <div class="sample-grid">
+      <img src="/sample/279_img_.png" onclick="processSample('279_img_.png')" alt="Sample 1">
+      <img src="/sample/117_img_.png" onclick="processSample('117_img_.png')" alt="Sample 2">
+      <img src="/sample/184_img_.png" onclick="processSample('184_img_.png')" alt="Sample 3">
+      <img src="/sample/180_img_.png" onclick="processSample('180_img_.png')" alt="Sample 4">
+    </div>
+  </div>
+
   <!-- Loader -->
   <div class="loader-wrap" id="loader">
     <div class="spinner"></div>
@@ -337,6 +378,24 @@
 
       try {
         const res  = await fetch('/enhance', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        showResult(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        loader.classList.remove('active');
+      }
+    }
+
+    /* ── Try Sample Image ── */
+    async function processSample(filename) {
+      loader.classList.add('active');
+      result.classList.remove('visible');
+      currentFileName = filename.replace('.png', '_enhanced.png');
+
+      try {
+        const res  = await fetch('/enhance_sample/' + filename, { method: 'POST' });
         const data = await res.json();
         if (data.error) { alert(data.error); return; }
         showResult(data);

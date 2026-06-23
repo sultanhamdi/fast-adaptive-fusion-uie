@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import cv2
 import numpy as np
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 
 from method.lightweight_adaptive_fusion import LightweightAdaptiveFusion
 from evaluation_metrics import compute_uiqm, compute_uciqe, compute_niqe_approx
@@ -30,40 +30,22 @@ def _encode_img(bgr: np.ndarray) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buf.tobytes()).decode()
 
 
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-
-@app.route("/enhance", methods=["POST"])
-def enhance():
-    file = request.files.get("image")
-    if file is None:
-        return jsonify(error="No image uploaded"), 400
-
-    raw = file.read()
-    arr = np.frombuffer(raw, dtype=np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-    if img is None:
-        return jsonify(error="Invalid image"), 400
-
-    # Enhance
+def _process_image(img: np.ndarray) -> dict:
+    """Core enhancement and metric calculation logic."""
     t0 = time.perf_counter()
     result = enhancer.enhance(img)
     elapsed_ms = (time.perf_counter() - t0) * 1000
     fps = 1000.0 / elapsed_ms
 
-    # Metrics - original
     uiqm_orig = compute_uiqm(img)["uiqm"]
     uciqe_orig = compute_uciqe(img)["uciqe"]
     niqe_orig = compute_niqe_approx(img)["niqe_approx"]
 
-    # Metrics - enhanced
     uiqm_enh = compute_uiqm(result)["uiqm"]
     uciqe_enh = compute_uciqe(result)["uciqe"]
     niqe_enh = compute_niqe_approx(result)["niqe_approx"]
 
-    return jsonify(
+    return dict(
         original=_encode_img(img),
         enhanced=_encode_img(result),
         width=img.shape[1],
@@ -79,6 +61,46 @@ def enhance():
             niqe_enh=round(niqe_enh, 4),
         ),
     )
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+@app.route("/sample/<filename>")
+def get_sample(filename):
+    """Serve raw sample images from the dataset directory."""
+    return send_from_directory(os.path.join("dataset", "raw"), filename)
+
+
+@app.route("/enhance_sample/<filename>", methods=["POST"])
+def enhance_sample(filename):
+    """Process a pre-existing sample image."""
+    path = os.path.join("dataset", "raw", filename)
+    if not os.path.exists(path):
+        return jsonify(error="Sample image not found"), 404
+
+    img = cv2.imread(path)
+    if img is None:
+        return jsonify(error="Invalid sample image"), 400
+
+    return jsonify(**_process_image(img))
+
+
+@app.route("/enhance", methods=["POST"])
+def enhance():
+    file = request.files.get("image")
+    if file is None:
+        return jsonify(error="No image uploaded"), 400
+
+    raw = file.read()
+    arr = np.frombuffer(raw, dtype=np.uint8)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    if img is None:
+        return jsonify(error="Invalid image"), 400
+
+    return jsonify(**_process_image(img))
 
 
 if __name__ == "__main__":

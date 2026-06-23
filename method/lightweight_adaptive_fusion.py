@@ -74,10 +74,10 @@ class LightweightAdaptiveFusion:
         return corrected                               # Kandidat 1
 
     # Langkah B - Detail Enhancement via CLAHE pada Luminance
-    def _step_b_detail_enhancement(self, cand1: np.ndarray) -> np.ndarray:
+    def _step_b_detail_enhancement(self, cand1: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Perkuat detail tekstur dengan CLAHE pada saluran Y (YCbCr).
-
+        Juga me-return saluran Y asli dan Y yang telah di-enhance untuk dipakai ulang.
         """
         ycbcr = cv2.cvtColor(cand1, cv2.COLOR_BGR2YCrCb)
         y, cr, cb = cv2.split(ycbcr)
@@ -86,7 +86,7 @@ class LightweightAdaptiveFusion:
 
         merged = cv2.merge((y_enhanced, cr, cb))
         cand2 = cv2.cvtColor(merged, cv2.COLOR_YCrCb2BGR)
-        return cand2                                   # Kandidat 2
+        return cand2, y, y_enhanced                    # (Kandidat 2, Y_cand1, Y_cand2)
 
     # Langkah C - Lightweight Single-Level Fusion
 
@@ -110,13 +110,12 @@ class LightweightAdaptiveFusion:
 
         return saliency
 
-    def _weight_brightness(self, bgr: np.ndarray) -> np.ndarray:
+    def _weight_brightness(self, y_channel: np.ndarray) -> np.ndarray:
         """
         Brightness weight map berbasis distribusi Gaussian.
-
+        Menerima input saluran Y (Luminance) untuk menghindari konversi BGR ke Grayscale yang berulang.
         """
-        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        gray_norm = gray / 255.0                       # [0, 1]
+        gray_norm = y_channel.astype(np.float32) / 255.0       # [0, 1]
 
         brightness = np.exp(self._bright_coeff * (gray_norm - 0.5) ** 2)
         return brightness                              # (H, W)
@@ -125,6 +124,8 @@ class LightweightAdaptiveFusion:
         self,
         cand1: np.ndarray,
         cand2: np.ndarray,
+        y1: np.ndarray,
+        y2: np.ndarray,
     ) -> np.ndarray:
         """
         Pixel-wise weighted fusion tanpa piramida Laplacian.
@@ -132,12 +133,12 @@ class LightweightAdaptiveFusion:
         """
         # --- Weight maps Kandidat 1 ---
         sal1 = self._weight_saliency(cand1)
-        br1  = self._weight_brightness(cand1)
+        br1  = self._weight_brightness(y1)
         raw1 = sal1 * br1                              # (H, W) multiplicative
 
         # --- Weight maps Kandidat 2 ---
         sal2 = self._weight_saliency(cand2)
-        br2  = self._weight_brightness(cand2)
+        br2  = self._weight_brightness(y2)
         raw2 = sal2 * br2                              # (H, W) multiplicative
 
         # --- Normalisasi: W1 + W2 = 1 per piksel ---
@@ -169,7 +170,7 @@ class LightweightAdaptiveFusion:
             )
 
         cand1 = self._step_a_color_correction(image)
-        cand2 = self._step_b_detail_enhancement(cand1)
-        final = self._fuse(cand1, cand2)
+        cand2, y1, y2 = self._step_b_detail_enhancement(cand1)
+        final = self._fuse(cand1, cand2, y1, y2)
 
         return final
